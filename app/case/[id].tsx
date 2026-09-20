@@ -1,35 +1,30 @@
 import {
-  StyleSheet,
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
+  StyleSheet, View, Text, ScrollView, TouchableOpacity, Image,
 } from 'react-native';
 import {
-  ArrowLeft,
-  ShieldCheck,
-  FileText,
-  PhoneCall,
-  MapPin,
-  Calendar,
-  User,
-  FileBadge,
-  Lock,
-  AudioLines,
-  CheckCircle2,
-  XCircle,
+  ArrowLeft, ShieldCheck, FileText, PhoneCall, MapPin, Calendar,
+  User, FileBadge, Lock, AudioLines, CheckCircle2, XCircle,
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import { WarningBanner } from '@/components/WarningBanner';
+import { DisclaimerBanner } from '@/components/DisclaimerBanner';
 import { PlaceholderImage } from '@/components/PlaceholderImage';
-import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/features/auth/useAuth';
+import { formatDateTime } from '@/utils/dateFormat';
+
+const statusColors: Record<string, string> = {
+  Approved: Colors.green[400],
+  Rejected: Colors.red[400],
+  Submitted: Colors.amber[400],
+  Saved: Colors.teal[400],
+  Verified: Colors.green[400],
+  Pending: Colors.gray,
+};
 
 export default function CaseDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getCaseById, user } = useApp();
+  const { getCaseById, user } = useAuth();
   const testCase = id ? getCaseById(id) : undefined;
 
   if (!testCase) {
@@ -49,19 +44,7 @@ export default function CaseDetailScreen() {
     );
   }
 
-  const dateObj = new Date(testCase.date);
-  const dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-  const timeStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
   const isAdmin = user?.role === 'admin';
-
-  const statusColors: Record<string, string> = {
-    Approved: Colors.green[400],
-    Rejected: Colors.red[400],
-    Submitted: Colors.amber[400],
-    Saved: Colors.teal[400],
-    Verified: Colors.green[400],
-    Pending: Colors.gray,
-  };
   const statusColor = statusColors[testCase.status] || Colors.gray;
 
   return (
@@ -74,7 +57,7 @@ export default function CaseDetailScreen() {
         <View style={{ width: 22 }} />
       </View>
 
-      <WarningBanner compact />
+      <DisclaimerBanner compact />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.caseHeader}>
@@ -113,7 +96,7 @@ export default function CaseDetailScreen() {
         </Section>
 
         <Section title="Case Information">
-          <InfoRow icon={<Calendar size={16} color={Colors.gray} strokeWidth={2} />} label="Date / Time" value={`${dateStr} · ${timeStr}`} />
+          <InfoRow icon={<Calendar size={16} color={Colors.gray} strokeWidth={2} />} label="Date / Time" value={formatDateTime(testCase.date)} />
           <InfoRow icon={<User size={16} color={Colors.gray} strokeWidth={2} />} label="Officer" value={`${testCase.officerName} (${testCase.officerId})`} />
           <InfoRow icon={<MapPin size={16} color={Colors.gray} strokeWidth={2} />} label="GPS Location" value={testCase.gps} />
           <InfoRow icon={<FileText size={16} color={Colors.gray} strokeWidth={2} />} label="Suspected Substance" value={testCase.substance || 'Not identified — pending lab confirmation'} />
@@ -149,11 +132,7 @@ export default function CaseDetailScreen() {
           <View style={styles.adminActionsSection}>
             <Text style={styles.adminActionsTitle}>Admin Review</Text>
             <View style={styles.adminActionsRow}>
-              <TouchableOpacity
-                style={styles.adminApproveBtn}
-                onPress={() => router.back()}
-                activeOpacity={0.7}
-              >
+              <TouchableOpacity style={styles.adminApproveBtn} onPress={() => router.back()} activeOpacity={0.7}>
                 <CheckCircle2 size={18} color={Colors.white} strokeWidth={2.5} />
                 <Text style={styles.adminApproveText}>Approve from Dashboard</Text>
               </TouchableOpacity>
@@ -213,261 +192,43 @@ function DemoButton({ icon, label }: { icon: React.ReactNode; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.navy[800],
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 52,
-    paddingBottom: 12,
-    backgroundColor: Colors.navy[900],
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.navy[600],
-  },
-  topBarTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.white,
-    fontFamily: 'Inter-Bold',
-  },
-  scroll: {
-    padding: 20,
-    paddingBottom: 100,
-  },
-  caseHeader: {
-    backgroundColor: Colors.navy[700],
-    borderRadius: 14,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: Colors.navy[500],
-    marginBottom: 16,
-  },
-  caseHeaderTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  sampleId: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.white,
-    fontFamily: 'Inter-Bold',
-  },
-  caseId: {
-    fontSize: 13,
-    color: Colors.teal[300],
-    marginTop: 4,
-    fontFamily: 'Inter-Regular',
-  },
-  statusPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  statusPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    fontFamily: 'Inter-Bold',
-  },
-  resultRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-  },
-  resultLabel: {
-    fontSize: 14,
-    color: Colors.gray,
-    fontFamily: 'Inter-Regular',
-  },
-  resultValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    fontFamily: 'Inter-Bold',
-  },
-  section: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.teal[300],
-    marginBottom: 8,
-    fontFamily: 'Inter-Bold',
-    letterSpacing: 0.5,
-  },
-  sectionBody: {
-    backgroundColor: Colors.navy[700],
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.navy[500],
-  },
-  authNote: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  authText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.teal[300],
-    lineHeight: 20,
-    fontFamily: 'Inter-SemiBold',
-  },
-  evidenceImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.navy[600],
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: Colors.gray,
-    marginBottom: 3,
-    fontFamily: 'Inter-Regular',
-  },
-  infoValue: {
-    fontSize: 15,
-    color: Colors.white,
-    fontFamily: 'Inter-Regular',
-  },
-  mono: {
-    fontSize: 11,
-    fontFamily: 'Inter-Regular',
-    color: Colors.lightGray,
-  },
-  demoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: Colors.navy[900],
-    borderWidth: 1,
-    borderColor: Colors.navy[500],
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 8,
-    opacity: 0.7,
-  },
-  demoButtonText: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.lightGray,
-    fontFamily: 'Inter-SemiBold',
-  },
-  demoBadge: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.darkGray,
-    backgroundColor: Colors.navy[600],
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    fontFamily: 'Inter-SemiBold',
-  },
-  adminActionsSection: {
-    marginBottom: 16,
-  },
-  adminActionsTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.amber[400],
-    marginBottom: 8,
-    fontFamily: 'Inter-Bold',
-    letterSpacing: 0.5,
-  },
-  adminActionsRow: {
-    backgroundColor: Colors.navy[700],
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.navy[500],
-  },
-  adminApproveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.teal[500],
-    borderRadius: 10,
-    height: 48,
-  },
-  adminApproveText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.white,
-    fontFamily: 'Inter-Bold',
-  },
-  adminHint: {
-    fontSize: 12,
-    color: Colors.gray,
-    marginTop: 10,
-    textAlign: 'center',
-    fontFamily: 'Inter-Regular',
-  },
-  approvalBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: 'rgba(39, 174, 96, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(39, 174, 96, 0.3)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 16,
-  },
-  approvalText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.green[400],
-    fontFamily: 'Inter-SemiBold',
-  },
-  rejectionBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: 'rgba(231, 76, 60, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(231, 76, 60, 0.3)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 16,
-  },
-  rejectionText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.red[400],
-    fontFamily: 'Inter-SemiBold',
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    fontSize: 15,
-    color: Colors.gray,
-    fontFamily: 'Inter-Regular',
-  },
+  container: { flex: 1, backgroundColor: Colors.navy[800] },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 52, paddingBottom: 12, backgroundColor: Colors.navy[900], borderBottomWidth: 1, borderBottomColor: Colors.navy[600] },
+  topBarTitle: { fontSize: 17, fontWeight: '700', color: Colors.white, fontFamily: 'Inter-Bold' },
+  scroll: { padding: 20, paddingBottom: 100 },
+  emptyState: { alignItems: 'center', paddingTop: 40 },
+  emptyText: { fontSize: 14, color: Colors.gray, textAlign: 'center', fontFamily: 'Inter-Regular' },
+  caseHeader: { backgroundColor: Colors.navy[700], borderRadius: 14, padding: 18, borderWidth: 1, borderColor: Colors.navy[500], marginBottom: 16 },
+  caseHeaderTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  sampleId: { fontSize: 20, fontWeight: '700', color: Colors.white, fontFamily: 'Inter-Bold' },
+  caseId: { fontSize: 13, color: Colors.teal[300], marginTop: 4, fontFamily: 'Inter-Regular' },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1 },
+  statusPillText: { fontSize: 11, fontWeight: '700', fontFamily: 'Inter-Bold' },
+  resultRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
+  resultLabel: { fontSize: 14, color: Colors.gray, fontFamily: 'Inter-Regular' },
+  resultValue: { fontSize: 15, fontWeight: '700', fontFamily: 'Inter-Bold' },
+  section: { marginBottom: 16 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: Colors.teal[300], marginBottom: 8, fontFamily: 'Inter-Bold' },
+  sectionBody: { backgroundColor: Colors.navy[700], borderRadius: 12, padding: 16, borderWidth: 1, borderColor: Colors.navy[500] },
+  authNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  authText: { flex: 1, fontSize: 13, color: Colors.lightGray, lineHeight: 19, fontFamily: 'Inter-Regular' },
+  evidenceImage: { width: '100%', height: 200, borderRadius: 10 },
+  infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.navy[600] },
+  infoContent: { flex: 1 },
+  infoLabel: { fontSize: 12, color: Colors.gray, marginBottom: 2, fontFamily: 'Inter-Regular' },
+  infoValue: { fontSize: 14, color: Colors.white, fontFamily: 'Inter-Regular' },
+  mono: { fontFamily: 'monospace', fontSize: 11 },
+  demoButton: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.navy[600] },
+  demoButtonText: { flex: 1, fontSize: 14, color: Colors.teal[300], fontWeight: '600', fontFamily: 'Inter-SemiBold' },
+  demoBadge: { fontSize: 10, fontWeight: '700', color: Colors.darkGray, backgroundColor: Colors.navy[600], paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4, overflow: 'hidden' },
+  adminActionsSection: { marginBottom: 16 },
+  adminActionsTitle: { fontSize: 13, fontWeight: '700', color: Colors.teal[300], marginBottom: 8, fontFamily: 'Inter-Bold' },
+  adminActionsRow: { flexDirection: 'row', gap: 10 },
+  adminApproveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.green[500], borderRadius: 12, height: 48 },
+  adminApproveText: { fontSize: 14, fontWeight: '700', color: Colors.white, fontFamily: 'Inter-Bold' },
+  adminHint: { fontSize: 11, color: Colors.darkGray, marginTop: 8, fontStyle: 'italic', fontFamily: 'Inter-Regular' },
+  approvalBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(39, 174, 96, 0.12)', borderWidth: 1, borderColor: 'rgba(39, 174, 96, 0.3)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, marginTop: 8 },
+  approvalText: { flex: 1, fontSize: 13, color: Colors.green[400], fontWeight: '600', fontFamily: 'Inter-SemiBold' },
+  rejectionBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(231, 76, 60, 0.12)', borderWidth: 1, borderColor: 'rgba(231, 76, 60, 0.3)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, marginTop: 8 },
+  rejectionText: { flex: 1, fontSize: 13, color: Colors.red[400], fontWeight: '600', fontFamily: 'Inter-SemiBold' },
 });
