@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
@@ -11,26 +11,9 @@ import {
   Inter_800ExtraBold,
 } from '@expo-google-fonts/inter';
 import { useFrameworkReady } from '../hooks/useFrameworkReady';
-import { AuthProvider, useAuth } from '@/features/auth/useAuth';
+import { AuthProvider } from '@/features/auth/useAuth';
 
 SplashScreen.preventAutoHideAsync();
-
-function AuthGate() {
-  const { user } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!user) {
-      router.replace('/login');
-    } else if (user.role === 'admin') {
-      router.replace('/authority/dashboard');
-    } else {
-      router.replace('/dashboard');
-    }
-  }, [user]);
-
-  return null;
-}
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -65,7 +48,6 @@ export default function RootLayout() {
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="light" />
-      <AuthGate />
     </AuthProvider>
   );
 }
